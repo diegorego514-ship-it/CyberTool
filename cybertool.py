@@ -121,5 +121,8 @@ try:
 except Exception as e:
     print("\n[!] Script terminated by user. Bye")
 
+    int = input(payload) 
+    import glob
+
 if __name__ == "__main__":
     main()
