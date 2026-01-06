@@ -4,7 +4,7 @@ import threading
 import time
 
 # --- CONFIGURATION ---
-TARGET_IPS = ['192.168.1.10', '103.190.171.135'] # Add your targets here
+TARGET_IPS = ['192.168.15.1'] # Add your targets here
 TARGET_PORT = 80 # Common web server port
 VULNERABLE_UPLOAD_PATH = '/upload.php' # Fictional vulnerable upload script
 
